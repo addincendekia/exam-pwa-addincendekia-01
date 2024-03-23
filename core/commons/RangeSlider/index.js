@@ -176,7 +176,7 @@ const RangeSlider = (props) => {
                     /* For Chrome browsers */
                     .thumb::-webkit-slider-thumb {
                         background-color: white;
-                        border: 1.5px solid #be1f93;
+                        border: 1.5px solid var(--color-pwa-primary_color);
                         border-radius: 50%;
                         cursor: pointer;
                         height: 24px;
@@ -189,7 +189,7 @@ const RangeSlider = (props) => {
                     /* For Firefox browsers */
                     .thumb::-moz-range-thumb {
                         background-color: white;
-                        border: 1.5px solid #be1f93;
+                        border: 1.5px solid var(--color-pwa-primary_color);
                         border-radius: 50%;
                         cursor: pointer;
                         height: 24px;
