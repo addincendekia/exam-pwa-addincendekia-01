@@ -88,7 +88,7 @@ const headerVersion = 'v2';
 
 /* Footer */
 // identifier for footer (pwa_footer_v1, pwa_footer_v2, pwa_footer_v3, pwa_footer_v4)
-const footerVersion = 'pwa_footer_v1';
+const footerVersion = 'pwa_footer_v2';
 
 /* Social media link */
 // social media link in dashboard
