@@ -6,6 +6,7 @@ import cx from 'classnames';
 
 const MagezonColumn = (props) => {
     const {
+        el_class = '',
         elements,
         xs_size,
         sm_size,
@@ -53,7 +54,7 @@ const MagezonColumn = (props) => {
 
     return (
         <>
-            <div className={cx(classColumn, className)}>
+            <div className={cx(classColumn, className, el_class)}>
                 {elements && elements.length > 0 && elements.map((item, key) => <MagezonElement key={key} {...item} storeConfig={storeConfig} />)}
             </div>
             <style jsx>
