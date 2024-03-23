@@ -10,13 +10,12 @@ import { setResolver, getResolver } from '@helper_localstorage';
 import { getSessionStorage, setSessionStorage } from '@helpers/sessionstorage';
 import classNames from 'classnames';
 import ConfigurableOpt from '@plugin_optionitem';
-import { addWishlist, getDetailProduct } from '@core_modules/catalog/services/graphql';
+import { addWishlist } from '@core_modules/catalog/services/graphql';
 import { addProductsToCompareList } from '@core_modules/product/services/graphql';
 import { getCustomerUid } from '@core_modules/productcompare/service/graphql';
 import { localCompare } from '@services/graphql/schema/local';
 import { getStoreHost } from '@helpers/config';
 import { getAppEnv } from '@core/helpers/env';
-import ModalQuickView from '@plugin_productitem/components/QuickView';
 import TagManager from 'react-gtm-module';
 import { priceVar } from '@core/services/graphql/cache';
 
@@ -30,8 +29,6 @@ import Typography from '@common/Typography';
 
 import HeartIcon from '@heroicons/react/24/outline/HeartIcon';
 import CompareIcon from '@heroicons/react/24/outline/ArrowsRightLeftIcon';
-import EyeIcon from '@heroicons/react/24/outline/EyeIcon';
-import EyeSolidIcon from '@heroicons/react/20/solid/EyeIcon';
 import TrashIcon from '@heroicons/react/24/solid/TrashIcon';
 import Show from '@common/Show';
 import Badge from '@common/Badge';
@@ -53,6 +50,7 @@ const ProductItem = (props) => {
         enableWishlist,
         enableImage = true,
         imageProps = {},
+        enableProductCompare = true,
         enableShortDescription = true,
         preload,
         usedInWishlist = false,
@@ -66,7 +64,6 @@ const ProductItem = (props) => {
     const { t } = useTranslation(['catalog', 'common']);
     const [feed, setFeed] = React.useState(false);
     const [spesificProduct, setSpesificProduct] = React.useState({});
-    const [openQuickView, setOpenQuickView] = React.useState(false);
 
     // Customizable Options
     const [customizableOptions, setCustomizableOptions] = React.useState([]);
@@ -125,15 +122,6 @@ const ProductItem = (props) => {
 
     let isLogin = '';
     if (typeof window !== 'undefined') isLogin = getLoginInfo();
-
-    const [getProduct, { data: dataDetailProduct, error: errorDetailProduct, loading: loadingDetailProduct }] = getDetailProduct(
-        storeConfig.pwa || {},
-        {
-            context: {
-                request: 'internal',
-            },
-        },
-    );
 
     // cache price
     const cachePrice = useReactiveVar(priceVar);
@@ -331,30 +319,6 @@ const ProductItem = (props) => {
         }
     };
 
-    const handleQuickView = async () => {
-        if (!url_key) {
-            window.backdropLoader(false);
-            setOpenQuickView(false);
-        } else {
-            window.backdropLoader(true);
-            getProduct({
-                variables: {
-                    url_key,
-                },
-            });
-        }
-    };
-
-    React.useEffect(() => {
-        if (errorDetailProduct) {
-            window.backdropLoader(false);
-        }
-        if (!loadingDetailProduct && dataDetailProduct?.products?.items?.length > 0) {
-            window.backdropLoader(false);
-            setOpenQuickView(true);
-        }
-    }, [dataDetailProduct]);
-
     const ratingValue = review && review.rating_summary ? parseInt(review.rating_summary, 10) / 20 : 0;
     const DetailProps = {
         spesificProduct,
@@ -367,11 +331,8 @@ const ProductItem = (props) => {
     };
     const showAddToCart = typeof enableAddToCart !== 'undefined' ? enableAddToCart : storeConfig?.pwa?.add_to_cart_enable;
     const showOption = typeof enableOption !== 'undefined' ? enableOption : storeConfig?.pwa?.configurable_options_enable;
-    const showQuickView = typeof enableQuickView !== 'undefined' ? enableQuickView : storeConfig?.pwa?.quick_view_enable;
-
-    const showWishlist = modules.wishlist.enabled;
-    const showProductCompare = modules.productcompare.enabled;
-
+    const showWishlist = typeof enableWishlist !== 'undefined' ? enableWishlist : modules.wishlist.enabled;
+    const showProductCompare = enableProductCompare || modules.productcompare.enabled;
     const showShortDescription = enableShortDescription;
 
     const generatePrice = (priceDataItem = []) => {
@@ -416,13 +377,14 @@ const ProductItem = (props) => {
                 <div className="hidden tablet:flex desktop:flex flex-row gap-1 justify-center items-center w-full">
                     <Show when={showAddToCart && !viewItemOnly}>
                         <Button
+                            iconProps={{ className: 'w-4 h-4 hidden desktop:flex' }}
                             disabled={disabled}
                             onClick={handleAddToCart}
                             loading={loading}
                             className={classNames(
                                 'swift-action-tocart w-max h-[38px] desktop:h-[40px] tablet:max-w-[116px] desktop:max-w-max',
                                 '!px-4 !py-2 justify-center',
-                                'hover:bg-primary-300 disabled:hover:bg-neutral-100',
+                                'hover:!bg-primary-300 disabled:hover:!bg-neutral-100',
                             )}
                         >
                             <Typography color="white" className="font-normal text-sm tablet:truncate">
@@ -446,49 +408,6 @@ const ProductItem = (props) => {
                             </Typography>
                         </Button>
                     </Show>
-                    <Show when={showWishlist || showProductCompare}>
-                        <div className="flex-row gap-1 hidden tablet:flex desktop:flex">
-                            <Show when={showWishlist && !usedInWishlist}>
-                                <Button
-                                    iconOnly
-                                    icon={<HeartIcon />}
-                                    iconProps={{ className: feed ? '!w-4 !h-4 text-neutral-white' : '!w-4 !h-4 group-hover:text-neutral-white' }}
-                                    variant={feed ? 'primary' : 'outlined'}
-                                    onClick={() => handleFeed(props)}
-                                    className={classNames(
-                                        'swift-action-towishlist !p-[10px] !border-neutral-200 hover:bg-primary group',
-                                        'hover:!shadow-none focus:!shadow-none hover:!opacity-100',
-                                    )}
-                                />
-                            </Show>
-                            <Show when={usedInWishlist}>
-                                <Button
-                                    iconOnly
-                                    icon={<TrashIcon />}
-                                    iconProps={{ className: '!w-4 !h-4 group-hover:text-neutral-white text-primary' }}
-                                    variant="outlined"
-                                    onClick={() => handlingRemove()}
-                                    className={classNames(
-                                        'swift-action-toremove !p-[10px] !border-neutral-200 hover:bg-primary group',
-                                        'hover:!shadow-none focus:!shadow-none hover:!opacity-100',
-                                    )}
-                                />
-                            </Show>
-                            <Show when={showProductCompare}>
-                                <Button
-                                    iconOnly
-                                    icon={<CompareIcon />}
-                                    iconProps={{ className: '!w-4 !h-4 group-hover:text-neutral-white' }}
-                                    variant="outlined"
-                                    onClick={() => handleSetCompareList(props?.id)}
-                                    className={classNames(
-                                        'swift-action-tocompare !p-[10px] !border-neutral-200 hover:bg-primary group',
-                                        'hover:!shadow-none focus:!shadow-none hover:!opacity-100',
-                                    )}
-                                />
-                            </Show>
-                        </div>
-                    </Show>
                 </div>
             </div>
         );
@@ -505,21 +424,6 @@ const ProductItem = (props) => {
     if (isGrid) {
         return (
             <>
-                {openQuickView && showQuickView && (
-                    <ModalQuickView
-                        open={openQuickView}
-                        onClose={() => setOpenQuickView(false)}
-                        data={
-                            // eslint-disable-next-line no-underscore-dangle
-                            dataDetailProduct?.__typename === 'AwGiftCardProduct' ? dataDetailProduct : dataDetailProduct?.products
-                        }
-                        dataPrice={getPrice()}
-                        keyProduct={url_key}
-                        t={t}
-                        weltpixel_labels={weltpixel_labels}
-                        storeConfig={storeConfig}
-                    />
-                )}
                 <div
                     className={classNames(
                         'w-full inline-block h-full overflow-hidden relative cursor-pointer',
@@ -543,45 +447,54 @@ const ProductItem = (props) => {
                                 />
                             </div>
                         )}
-                        {showQuickView && (
-                            <>
-                                <Button
-                                    onClick={handleQuickView}
-                                    icon={<EyeIcon />}
-                                    iconProps={{
-                                        className: 'w-3 h-3 !text-neutral-800 mr-[6px]',
-                                    }}
-                                    className={classNames(
-                                        '!bg-neutral-50 shadow-md invisible',
-                                        'desktop:group-hover:visible',
-                                        'absolute px-3 py-2',
-                                        'left-1/2 bottom-4 -translate-x-1/2 z-[2] w-32',
-                                        'swift-quickview-button',
-                                    )}
-                                    size="sm"
-                                >
-                                    <span className="text-sm !text-neutral-900 justify-center">{t('catalog:title:quickView')}</span>
-                                </Button>
-                                <Button
-                                    onClick={handleQuickView}
-                                    iconOnly
-                                    icon={<EyeSolidIcon />}
-                                    iconProps={{
-                                        className: classNames(
-                                            'w-[20px] !h-[20px] !text-neutral-800',
-                                            'absolute left-1/2 top-1/2 -translate-x-[50%] -translate-y-[50%]',
-                                        ),
-                                    }}
-                                    classNameText="relative"
-                                    className={classNames(
-                                        'desktop:hidden w-7 h-7',
-                                        '!bg-neutral-50 shadow-md',
-                                        'absolute bottom-2 left-2 z-[2]',
-                                        '!p-[6px]',
-                                    )}
-                                />
-                            </>
-                        )}
+                        <Show when={showWishlist || showProductCompare}>
+                            <div
+                                className={classNames(
+                                    'flex-row gap-1 hidden group-hover:!flex',
+                                    'absolute -translate-x-2/4 -translate-y-2/4 z-[99] left-2/4 bottom-0',
+                                )}
+                            >
+                                <Show when={showWishlist && !usedInWishlist}>
+                                    <Button
+                                        iconOnly
+                                        icon={<HeartIcon />}
+                                        iconProps={{ className: feed ? '!w-4 !h-4 text-neutral-white' : '!w-4 !h-4 group-hover:text-neutral-white' }}
+                                        variant={feed ? 'primary' : 'outlined'}
+                                        onClick={() => handleFeed(props)}
+                                        className={classNames(
+                                            'swift-action-towishlist !p-[10px] !border-neutral-200 hover:bg-primary group',
+                                            'hover:!shadow-none focus:!shadow-none hover:!opacity-100',
+                                        )}
+                                    />
+                                </Show>
+                                <Show when={usedInWishlist}>
+                                    <Button
+                                        iconOnly
+                                        icon={<TrashIcon />}
+                                        iconProps={{ className: '!w-4 !h-4 text-primary' }}
+                                        variant="outlined"
+                                        onClick={() => handlingRemove()}
+                                        className={classNames(
+                                            'swift-action-toremove !p-[10px] !border-neutral-200 hover:bg-primary group',
+                                            'hover:!shadow-none focus:!shadow-none hover:!opacity-100',
+                                        )}
+                                    />
+                                </Show>
+                                <Show when={showProductCompare}>
+                                    <Button
+                                        iconOnly
+                                        icon={<CompareIcon />}
+                                        iconProps={{ className: '!w-4 !h-4 group-hover:text-neutral-white' }}
+                                        variant="outlined"
+                                        onClick={() => handleSetCompareList(props?.id)}
+                                        className={classNames(
+                                            'swift-action-tocompare !p-[10px] !border-neutral-200 hover:bg-primary group',
+                                            'hover:!shadow-none focus:!shadow-none hover:!opacity-100',
+                                        )}
+                                    />
+                                </Show>
+                            </div>
+                        </Show>
                         <Show when={enableImage}>
                             <ImageProductView
                                 t={t}
@@ -648,21 +561,6 @@ const ProductItem = (props) => {
 
     return (
         <>
-            {openQuickView && showQuickView && (
-                <ModalQuickView
-                    open={openQuickView}
-                    onClose={() => setOpenQuickView(false)}
-                    data={
-                        // eslint-disable-next-line no-underscore-dangle
-                        dataDetailProduct?.__typename === 'AwGiftCardProduct' ? dataDetailProduct : dataDetailProduct?.products
-                    }
-                    dataPrice={getPrice()}
-                    keyProduct={url_key}
-                    t={t}
-                    weltpixel_labels={weltpixel_labels}
-                    storeConfig={storeConfig}
-                />
-            )}
             <div
                 className={classNames(
                     'flex flex-row gap-2 tablet:gap-4',
@@ -689,44 +587,54 @@ const ProductItem = (props) => {
                                 <Badge bold label={stockStatus.replace(/_/g, ' ')} className="!bg-neutral text-white !text-xs tablet:!text-sm" />
                             </div>
                         )}
-                        {showQuickView && (
-                            <>
-                                <Button
-                                    onClick={handleQuickView}
-                                    icon={<EyeIcon />}
-                                    iconProps={{
-                                        className: 'w-3 h-3 !text-neutral-800 mr-[6px]',
-                                    }}
-                                    className={classNames(
-                                        '!bg-neutral-50 shadow-md invisible',
-                                        'desktop:group-hover:visible',
-                                        'absolute px-3 py-2',
-                                        'desktop:left-2 desktop:bottom-2 z-[2] desktop:w-32',
-                                    )}
-                                    size="sm"
-                                >
-                                    <span className="text-sm !text-neutral-900 justify-center">{t('catalog:title:quickView')}</span>
-                                </Button>
-                                <Button
-                                    iconOnly
-                                    onClick={handleQuickView}
-                                    icon={<EyeSolidIcon />}
-                                    iconProps={{
-                                        className: classNames(
-                                            'w-[20px] !h-[20px] !text-neutral-800',
-                                            'absolute left-1/2 top-1/2 -translate-x-[50%] -translate-y-[50%]',
-                                        ),
-                                    }}
-                                    classNameText="relative"
-                                    className={classNames(
-                                        'desktop:hidden w-7 h-7',
-                                        '!bg-neutral-50 shadow-md',
-                                        'absolute bottom-2 left-2 z-[2]',
-                                        '!p-[6px]',
-                                    )}
-                                />
-                            </>
-                        )}
+                        <Show when={showWishlist || showProductCompare}>
+                            <div
+                                className={classNames(
+                                    'flex-row gap-1 hidden group-hover:!flex',
+                                    'absolute -translate-x-2/4 -translate-y-2/4 z-[99] left-2/4 bottom-0',
+                                )}
+                            >
+                                <Show when={showWishlist && !usedInWishlist}>
+                                    <Button
+                                        iconOnly
+                                        icon={<HeartIcon />}
+                                        iconProps={{ className: feed ? '!w-4 !h-4 text-neutral-white' : '!w-4 !h-4' }}
+                                        variant={feed ? 'primary' : 'outlined'}
+                                        onClick={() => handleFeed(props)}
+                                        className={classNames(
+                                            'swift-action-towishlist !p-[10px] !border-neutral-200 hover:bg-primary group',
+                                            'hover:!shadow-none focus:!shadow-none hover:!opacity-100',
+                                        )}
+                                    />
+                                </Show>
+                                <Show when={usedInWishlist}>
+                                    <Button
+                                        iconOnly
+                                        icon={<TrashIcon />}
+                                        iconProps={{ className: '!w-4 !h-4 text-primary' }}
+                                        variant="outlined"
+                                        onClick={() => handlingRemove()}
+                                        className={classNames(
+                                            'swift-action-toremove !p-[10px] !border-neutral-200 hover:bg-primary group',
+                                            'hover:!shadow-none focus:!shadow-none hover:!opacity-100',
+                                        )}
+                                    />
+                                </Show>
+                                <Show when={showProductCompare}>
+                                    <Button
+                                        iconOnly
+                                        icon={<CompareIcon />}
+                                        iconProps={{ className: '!w-4 !h-4' }}
+                                        variant="outlined"
+                                        onClick={() => handleSetCompareList(props?.id)}
+                                        className={classNames(
+                                            'swift-action-tocompare !p-[10px] !border-neutral-200 hover:bg-primary group',
+                                            'hover:!shadow-none focus:!shadow-none hover:!opacity-100',
+                                        )}
+                                    />
+                                </Show>
+                            </div>
+                        </Show>
                         <Show when={enableImage}>
                             <ImageProductView
                                 t={t}
