@@ -1,6 +1,6 @@
 /* eslint-disable indent */
 
-import { COLORS } from '../theme/vars';
+import { COLORS } from '@core/theme/vars';
 
 // eslint-disable-next-line import/prefer-default-export
 export const frontendConfig = (pwaConfig) => {

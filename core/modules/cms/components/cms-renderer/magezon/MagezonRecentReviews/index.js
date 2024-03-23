@@ -18,7 +18,7 @@ import { useRef } from 'react';
 import Slider from 'react-slick';
 import Thumbor from '@common_image';
 import cx from 'classnames';
-import { COLORS } from '@root/core/theme/vars';
+import { COLORS } from '@core/theme/vars';
 
 const DEFAULT_SKU = 'Jersey Manchester City (Test Customizable Options)';
 
