@@ -87,7 +87,7 @@ const Button = (props) => {
             typography: cx('!text-neutral-400', underline && 'underline'),
         },
         plain: {
-            button: '',
+            button: '!p-0',
             typography: cx('!text-black hover:text-neutral-400', underline && 'underline'),
         },
     };

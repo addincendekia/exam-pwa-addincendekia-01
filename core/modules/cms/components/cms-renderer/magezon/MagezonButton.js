@@ -25,11 +25,14 @@ const MagezonButton = (props) => {
         full_width,
         button_style,
         box_shadow_color,
+        display_as_link,
         gradient_color_1,
         gradient_color_2,
     } = props;
     const isButtonXs = button_size === 'xs';
     const isRightIcon = icon_position === 'right';
+
+    const variant = display_as_link ? 'plain' : null;
 
     return (
         <div className="mgz-button">
@@ -37,6 +40,7 @@ const MagezonButton = (props) => {
                 <MagezonLink link={link}>
                     <Button
                         type="button"
+                        variant={variant}
                         onClick={onClick}
                         className={cx('focus:shadow-none', {
                             'w-full': full_width,
@@ -54,6 +58,7 @@ const MagezonButton = (props) => {
             ) : (
                 <Button
                     type="button"
+                    variant={variant}
                     onClick={onClick}
                     className={cx('focus:shadow-none', {
                         'w-full': full_width,
