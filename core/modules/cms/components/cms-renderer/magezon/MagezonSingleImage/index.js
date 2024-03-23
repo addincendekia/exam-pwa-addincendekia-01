@@ -267,6 +267,9 @@ const MagezonSingleImage = (props) => {
             </style>
             <style jsx global>
                 {`
+                    .hide {
+                        display: none;
+                    }
                     .magezon-image {
                         position: relative;
                     }
